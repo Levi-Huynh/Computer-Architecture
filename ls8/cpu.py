@@ -84,6 +84,7 @@ class CPU:
         """
         pc = 0
         running = True
+        print("start running")
         while running:
             # read the memory address that's stored in register PC == memory data
             if self.memory[pc] == 130:
@@ -98,14 +99,18 @@ class CPU:
                 pc += 2
             elif self.memory[pc] == 1:
                 running = False
-    pc = CPU()
-    pc.run()
 
-    def ram_read(self):
+    def ram_read(self, address):
         print(
-            f"Ram address is {self.pc}, value at this address is {self.memory[self.pc]} ")
+            f"Ram address is {address}, value at this address is {self.memory[address]} ")
 
-        return self.memory[self.pc]
+        return self.memory[address]
 
     def ram_write(self, value_write_to_memory, addressIn_memoryTowrite):
-        return self.memory[addressIn_memoryTowrite] = value_write_to_memory
+        self.memory[addressIn_memoryTowrite] = value_write_to_memory
+        return self.memory[addressIn_memoryTowrite]
+
+
+thing = CPU()
+thing.load()
+thing.run()
