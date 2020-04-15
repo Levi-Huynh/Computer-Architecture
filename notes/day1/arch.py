@@ -41,10 +41,12 @@ program = [
     0b01000111,  # PRN R0
     0b00000000,
     0b00000001,  # HLT
+    0b10100010,  # MUL R0,R1
+    0b00000000,  # R0
+    0b00000001,  # R1
 ]
 
 for i in program:
     word = bin(i)
     word1 = int(word, 2)
     print(f"\n {word1}")
-

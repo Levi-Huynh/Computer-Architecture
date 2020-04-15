@@ -17,7 +17,7 @@ def load_memory(filename):
                 comment_split = line.split("#")
 
             # strip out whitespace
-                num = comment_split.strip()
+                num = comment_split[0].strip()
 
             # ignore blank lines
                 if num == '':
