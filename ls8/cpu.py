@@ -5,7 +5,8 @@ import sys
 OP1 = 0b10000010  # LDI
 OP2 = 0b01000111  # PRN
 OP3 = 0b10100010  # MULT
-OP4 = 0b00000001  # HLT
+OP4 = 0b01000101  # PUSH
+OP5 = 0b01000110  # POP
 
 
 class CPU:
@@ -21,6 +22,9 @@ class CPU:
         self.branchtable[OP1] = self.handle_op1
         self.branchtable[OP2] = self.handle_op2
         self.branchtable[OP3] = self.handle_op3
+        self.branchtable[OP4] = self.handle_op4
+        self.branchtable[OP5] = self.handle_op5
+        self.SP = 7
 
     def load(self):
         """Load a program into memory."""
@@ -114,32 +118,52 @@ class CPU:
 
         print()
 
-    def handle_op1(self, pc):
+    def handle_op1(self):
         # 130/LDI
         #self.mem[pc+1] = reg  self.mem[pc+2] value to store in reg #
         print("store!")
-        self.reg[self.memory[pc+1]] = self.memory[pc+2]
+        self.reg[self.memory[self.pc+1]] = self.memory[self.pc+2]
         # increment to next value in memory (after 1.opcode, 2. reg#, 3.value)
+        self.pc += 3
 
-    def handle_op2(self, pc):
+    def handle_op2(self):
         # PRN Print to the console the decimal integer value that is stored in the given register.
         print("print!")
-        print(self.reg[self.memory[pc+1]])
+        print(self.reg[self.memory[self.pc+1]])
         # skip the opcode and reg# we need to print
+        self.pc += 2
 
-    def handle_op3(self, pc):
+    def handle_op3(self):
         # mult 2 values in 2 regs together
         print("mult!")
         # this needs to be self.reg
-        regA_val = self.reg[self.memory[pc+1]]
-        regB_val = self.reg[self.memory[pc+2]]
+        regA_val = self.reg[self.memory[self.pc+1]]
+        regB_val = self.reg[self.memory[self.pc+2]]
         mult_val = regA_val * regB_val
 
         # store the result in regA
-        self.reg[self.memory[pc+1]] = mult_val
+        self.reg[self.memory[self.pc+1]] = mult_val
         # increment to next value in memory (after 1.opcode, 2. reg#, 3.value)
-        print("pc", pc, "self.reg",
-              self.reg[self.memory[pc+1]], regB_val, regA_val)
+        print("pc", self.pc, "self.reg",
+              self.reg[self.memory[self.pc+1]], regB_val, regA_val)
+        self.pc += 3
+
+    def handle_op4(self):
+        # push
+        #SP = 7
+        reg = self.memory[self.pc+1]
+        val = self.reg[reg]
+        self.reg[self.SP] = (self.reg[self.SP]-1) % (len(self.memory))
+        self.memory[self.reg[self.SP]] = val
+        self.pc += 2
+
+    def handle_op5(self):
+        # pop
+        reg = self.memory[self.pc+1]
+        val = self.memory[self.reg[self.SP]]
+        self.reg[reg] = val
+        self.reg[self.SP] = (self.reg[self.SP] + 1) % (len(self.memory))
+        self.pc += 2
 
     def run(self):
         """
@@ -157,28 +181,18 @@ class CPU:
         -After running code for any particular instruction, the PC needs to be updated to point to the next instruction for the next iteration of the loop in run(). The number of bytes an instruction uses can be determined
         from the two high bits (bits 6-7) of the instruction opcode. See the LS-8 spec for details.
         """
-        pc = 0
+        #pc = 0
         running = True
         print("start running")
         self.load()
         while running:
 
             # read the memory address that's stored in register PC == memory data
-            print("pc", pc, "self.memory[pc]", self.memory[pc])
-            if self.memory[pc] == 130:
-                ir = OP1
-                self.branchtable[ir](pc)
-                pc += 3
-            elif self.memory[pc] == 71:
-                ir = OP2
-                self.branchtable[ir](pc)
-                pc += 2
-            elif self.memory[pc] == 162:
-                ir = OP3
-                self.branchtable[ir](pc)
-                pc += 3
-            elif self.memory[pc] == 1:
+
+            if self.memory[self.pc] == 1:
                 running = False
+            else:
+                self.branchtable[self.memory[self.pc]]()
 
     def ram_read(self, address):
         print(
