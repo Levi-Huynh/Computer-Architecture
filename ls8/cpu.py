@@ -33,8 +33,8 @@ class CPU:
 
                         # strip whitespace
                         num = comment_split[0].strip()
-                        print("num[0]+", int("0b"+num[0]+num[1], 2))
-                        arg = int("0b"+num[0]+num[1], 2)
+                        #print("num[0]+", int("0b"+num[0]+num[1], 2))
+                        #arg = int("0b"+num[0]+num[1], 2)
 
                         # increment based on numb args to skip
                         # address starts at 0
