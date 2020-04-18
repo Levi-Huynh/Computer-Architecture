@@ -7,6 +7,9 @@ OP2 = 0b01000111  # PRN
 OP3 = 0b10100010  # MULT
 OP4 = 0b01000101  # PUSH
 OP5 = 0b01000110  # POP
+OP6 = 0b01010000  # CALL
+OP7 = 0b00010001  # RET
+OP8 = 0b10100000  # ADD
 
 
 class CPU:
@@ -18,13 +21,19 @@ class CPU:
         self.memory = [0] * self.bytes
         self.reg = [0] * 8
         self.pc = 0
+        # where 7 is the stack pointer, the last index in the reg
+
         self.branchtable = {}
         self.branchtable[OP1] = self.handle_op1
         self.branchtable[OP2] = self.handle_op2
         self.branchtable[OP3] = self.handle_op3
         self.branchtable[OP4] = self.handle_op4
         self.branchtable[OP5] = self.handle_op5
+        self.branchtable[OP6] = self.handle_op6
+        self.branchtable[OP7] = self.handle_op7
+        self.branchtable[OP8] = self.handle_op8
         self.SP = 7
+        self.reg[self.SP] = 0xf4
 
     def load(self):
         """Load a program into memory."""
@@ -144,16 +153,18 @@ class CPU:
         # store the result in regA
         self.reg[self.memory[self.pc+1]] = mult_val
         # increment to next value in memory (after 1.opcode, 2. reg#, 3.value)
-        print("pc", self.pc, "self.reg",
-              self.reg[self.memory[self.pc+1]], regB_val, regA_val)
+        # print("pc", self.pc, "self.reg",
+        # self.reg[self.memory[self.pc+1]], regB_val, regA_val)
         self.pc += 3
 
     def handle_op4(self):
         # push
         #SP = 7
+
         reg = self.memory[self.pc+1]
         val = self.reg[reg]
-        self.reg[self.SP] = (self.reg[self.SP]-1) % (len(self.memory))
+        #self.reg[self.SP] = (self.reg[self.SP]-1) % (len(self.memory))
+        self.reg[self.SP] -= 1
         self.memory[self.reg[self.SP]] = val
         self.pc += 2
 
@@ -162,8 +173,47 @@ class CPU:
         reg = self.memory[self.pc+1]
         val = self.memory[self.reg[self.SP]]
         self.reg[reg] = val
-        self.reg[self.SP] = (self.reg[self.SP] + 1) % (len(self.memory))
+        #self.reg[self.SP] = (self.reg[self.SP] + 1) % (len(self.memory))
+        self.reg[self.SP] += 1
         self.pc += 2
+
+    def handle_op6(self):
+        print("CALL!")
+        # CALL
+        # The address of the instruction directly after CALL is PUSHED ONTO STACK
+        # decrement our SP to push instructions to stack
+        #self.reg[self.SP] = (self.reg[self.SP]-1) % (len(self.memory))
+        self.reg[self.SP] -= 1
+        # This allows us to return to address where we left off when the subroutine finishes executing.
+        # store the address of the next operation so we know where to return to!
+        # SETTING MEMORY IN OUR STACK EQUAL to PC plus 2
+        self.memory[self.reg[self.SP]] = (self.pc + 2)
+        # The PC is set to the address stored in the given register.
+        # We jump to that location in RAM and execute the first instruction in the subroutine.
+        # The PC can move forward or backwards from its current location.
+        reg = self.memory[self.pc+1]
+        self.pc = self.reg[reg]
+        # print(
+        # f"memory: {self.memory[self.reg[self.SP]]}, pc: {self.pc},reg:{self.reg}")
+
+        # self.handle_op4()
+        #self.pc = self.reg[self.memory[self.pc + 1]]
+
+    def handle_op7(self):
+        print("RETURN!")
+        # Return from subroutine.
+        # Pop the value from the top of the stack and store it in the PC.
+        self.pc = self.memory[self.reg[self.SP]]
+        #self.reg[self.SP] = (self.reg[self.SP] + 1) % (len(self.memory))
+        self.reg[self.SP] += 1
+
+    def handle_op8(self):
+        print("ADD")
+        regA = self.reg[self.memory[self.pc+1]]
+        regB = self.reg[self.memory[self.pc+2]]
+        val = regA + regB
+        self.reg[self.memory[self.pc+1]] = val
+        self.pc += 3
 
     def run(self):
         """
@@ -186,12 +236,24 @@ class CPU:
         print("start running")
         self.load()
         while running:
-
+            command = self.memory[self.pc]
             # read the memory address that's stored in register PC == memory data
 
             if self.memory[self.pc] == 1:
                 running = False
+            # if command == 80:
+                # print("call")
+                #return_address = self.pc + 2
+                #self.reg[self.SP] -= 1
+                #self.memory[self.reg[self.SP]] = return_address
+                #reg_num = self.memory[self.pc + 1]
+                #self.pc = self.reg[reg_num]
+            # if command == 17:
+                # print("ret")
+                #self.pc = self.memory[self.reg[self.SP]]
+                #self.reg[self.SP] += 1
             else:
+                #print(f"self.pc: {self.pc}")
                 self.branchtable[self.memory[self.pc]]()
 
     def ram_read(self, address):
