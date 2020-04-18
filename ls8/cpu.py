@@ -2,6 +2,11 @@
 
 import sys
 
+OP1 = 0b10000010  # LDI
+OP2 = 0b01000111  # PRN
+OP3 = 0b10100010  # MULT
+OP4 = 0b00000001  # HLT
+
 
 class CPU:
     """Main CPU class."""
@@ -12,6 +17,10 @@ class CPU:
         self.memory = [0] * self.bytes
         self.reg = [0] * 8
         self.pc = 0
+        self.branchtable = {}
+        self.branchtable[OP1] = self.handle_op1
+        self.branchtable[OP2] = self.handle_op2
+        self.branchtable[OP3] = self.handle_op3
 
     def load(self):
         """Load a program into memory."""
@@ -105,6 +114,33 @@ class CPU:
 
         print()
 
+    def handle_op1(self, pc):
+        # 130/LDI
+        #self.mem[pc+1] = reg  self.mem[pc+2] value to store in reg #
+        print("store!")
+        self.reg[self.memory[pc+1]] = self.memory[pc+2]
+        # increment to next value in memory (after 1.opcode, 2. reg#, 3.value)
+
+    def handle_op2(self, pc):
+        # PRN Print to the console the decimal integer value that is stored in the given register.
+        print("print!")
+        print(self.reg[self.memory[pc+1]])
+        # skip the opcode and reg# we need to print
+
+    def handle_op3(self, pc):
+        # mult 2 values in 2 regs together
+        print("mult!")
+        # this needs to be self.reg
+        regA_val = self.reg[self.memory[pc+1]]
+        regB_val = self.reg[self.memory[pc+2]]
+        mult_val = regA_val * regB_val
+
+        # store the result in regA
+        self.reg[self.memory[pc+1]] = mult_val
+        # increment to next value in memory (after 1.opcode, 2. reg#, 3.value)
+        print("pc", pc, "self.reg",
+              self.reg[self.memory[pc+1]], regB_val, regA_val)
+
     def run(self):
         """
         Run the CPU.
@@ -130,30 +166,16 @@ class CPU:
             # read the memory address that's stored in register PC == memory data
             print("pc", pc, "self.memory[pc]", self.memory[pc])
             if self.memory[pc] == 130:
-                #self.mem[pc+1] = reg  self.mem[pc+2] value to store in reg #
-                print("store!")
-                self.reg[self.memory[pc+1]] = self.memory[pc+2]
-                # increment to next value in memory (after 1.opcode, 2. reg#, 3.value)
+                ir = OP1
+                self.branchtable[ir](pc)
                 pc += 3
             elif self.memory[pc] == 71:
-                # PRN Print to the console the decimal integer value that is stored in the given register.
-                print("print!")
-                print(self.reg[self.memory[pc+1]])
-                # skip the opcode and reg# we need to print
+                ir = OP2
+                self.branchtable[ir](pc)
                 pc += 2
             elif self.memory[pc] == 162:
-                # mult 2 values in 2 regs together
-                print("mult!")
-                # this needs to be self.reg
-                regA_val = self.reg[self.memory[pc+1]]
-                regB_val = self.reg[self.memory[pc+2]]
-                mult_val = regA_val * regB_val
-
-                # store the result in regA
-                self.reg[self.memory[pc+1]] = mult_val
-                # increment to next value in memory (after 1.opcode, 2. reg#, 3.value)
-                print("pc", pc, "self.reg",
-                      self.reg[self.memory[pc+1]], regB_val, regA_val)
+                ir = OP3
+                self.branchtable[ir](pc)
                 pc += 3
             elif self.memory[pc] == 1:
                 running = False
