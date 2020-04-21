@@ -10,6 +10,11 @@ OP5 = 0b01000110  # POP
 OP6 = 0b01010000  # CALL
 OP7 = 0b00010001  # RET
 OP8 = 0b10100000  # ADD
+OP9 = 0b10100111  # CMP 167
+OP10 = 0b01010100  # jmp 84
+
+OP11 = 0b01010110  # jne 86
+OP12 = 0b01010101  # JEQ 85
 
 
 class CPU:
@@ -21,19 +26,20 @@ class CPU:
         self.memory = [0] * self.bytes
         self.reg = [0] * 8
         self.pc = 0
-        # where 7 is the stack pointer, the last index in the reg
-
         self.branchtable = {}
         self.branchtable[OP1] = self.handle_op1
-        self.branchtable[OP2] = self.handle_op2
-        self.branchtable[OP3] = self.handle_op3
+        self.branchtable[0b01000111] = self.handle_op2
+        self.branchtable[0b10100010] = self.handle_op3
         self.branchtable[OP4] = self.handle_op4
         self.branchtable[OP5] = self.handle_op5
         self.branchtable[OP6] = self.handle_op6
         self.branchtable[OP7] = self.handle_op7
         self.branchtable[OP8] = self.handle_op8
+        # 9
+        self.branchtable[OP10] = self.handle_op10  # JMP
+        self.branchtable[OP11] = self.handle_op11  # JNE
+        self.branchtable[OP12] = self.handle_op12  # JEQ
         self.SP = 7
-        self.reg[self.SP] = 0xf4
 
     def load(self):
         """Load a program into memory."""
@@ -58,20 +64,16 @@ class CPU:
                         #print("num[0]+", int("0b"+num[0]+num[1], 2))
                         #arg = int("0b"+num[0]+num[1], 2)
 
-                        # increment based on numb args to skip
-                        # address starts at 0
-                        # if arg != 0:
-                        #con = int("0b"+num, 2)
-                        #self.memory[address] = con
-                        # increment
-                        #address += 1
-
                         # ignore blank lines
                         if num == '':
                             continue
 
                         converted = int("0b"+num, 2)  # converted to dec
+                        #bin_c = bin(converted)
+
                         self.memory[address] = converted
+                        # print(
+                        # f"dec: {converted}, bin_c: {bin_c} memory: {type(self.memory[address])} {type(converted)}")
                         address += 1
                         # self.reg[self.memory[address+1]]= val #store value in regA taken care of run
 
@@ -97,15 +99,6 @@ class CPU:
         # for instruction in program:
         # self.memory[address] = instruction
         # address += 1
-
-    def alu(self, op, reg_a, reg_b):
-        """ALU operations."""
-
-        if op == "ADD":
-            self.reg[reg_a] += self.reg[reg_b]
-        # elif op == "SUB": etc
-        else:
-            raise Exception("Unsupported ALU operation")
 
     def trace(self):
         """
@@ -215,6 +208,35 @@ class CPU:
         self.reg[self.memory[self.pc+1]] = val
         self.pc += 3
 
+    def alu(self, op, reg_a, reg_b):
+        """ALU operations."""
+
+        #print(f"op: {op}, type bin: {type(op)}")
+        num_operannds = op >> 6
+        if op == 130:  # LOAD
+            print("store!")
+            self.reg[self.memory[self.pc+1]] = self.memory[self.pc+2]
+            # increment to next value in memory (after 1.opcode, 2. reg#, 3.value)
+            #self.pc += 3
+            self.pc += (num_operannds + 1)
+
+        elif op == 162:
+            print("mult1!")
+            # this needs to be self.reg
+            regA_val = self.reg[self.memory[self.pc+1]]
+            regB_val = self.reg[self.memory[self.pc+2]]
+            mult_val = regA_val * regB_val
+            # store the result in regA
+            self.reg[self.memory[self.pc+1]] = mult_val
+            # increment to next value in memory (after 1.opcode, 2. reg#, 3.value)
+            # print("pc", self.pc, "self.reg",
+            # self.reg[self.memory[self.pc+1]], regB_val, regA_val)
+            #self.pc += 3
+            self.pc += (num_operannds + 1)
+
+        else:
+            raise Exception("Unsupported ALU operation")
+
     def run(self):
         """
         Run the CPU.
@@ -236,22 +258,18 @@ class CPU:
         print("start running")
         self.load()
         while running:
-            command = self.memory[self.pc]
-            # read the memory address that's stored in register PC == memory data
 
-            if self.memory[self.pc] == 1:
+            # read the memory address that's stored in register PC == memory data
+            instruction = self.memory[self.pc]
+            #print(f"instruction {instruction}")
+
+            if instruction == 0b00000001:
                 running = False
-            # if command == 80:
-                # print("call")
-                #return_address = self.pc + 2
-                #self.reg[self.SP] -= 1
-                #self.memory[self.reg[self.SP]] = return_address
-                #reg_num = self.memory[self.pc + 1]
-                #self.pc = self.reg[reg_num]
-            # if command == 17:
-                # print("ret")
-                #self.pc = self.memory[self.reg[self.SP]]
-                #self.reg[self.SP] += 1
+            elif instruction >> 7 == 1:
+                # if instruction >> 7 == 1:
+                # invoke self.alu
+                self.alu(
+                    instruction, self.memory[self.pc+1], self.memory[self.pc+2])
             else:
                 #print(f"self.pc: {self.pc}")
                 self.branchtable[self.memory[self.pc]]()
@@ -273,3 +291,4 @@ thing = CPU()
 
 thing.run()
 # thing.load()
+
