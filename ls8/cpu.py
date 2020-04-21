@@ -10,11 +10,6 @@ OP5 = 0b01000110  # POP
 OP6 = 0b01010000  # CALL
 OP7 = 0b00010001  # RET
 OP8 = 0b10100000  # ADD
-OP9 = 0b10100111  # CMP 167
-OP10 = 0b01010100  # jmp 84
-
-OP11 = 0b01010110  # jne 86
-OP12 = 0b01010101  # JEQ 85
 
 
 class CPU:
@@ -35,10 +30,7 @@ class CPU:
         self.branchtable[OP6] = self.handle_op6
         self.branchtable[OP7] = self.handle_op7
         self.branchtable[OP8] = self.handle_op8
-        # 9
-        self.branchtable[OP10] = self.handle_op10  # JMP
-        self.branchtable[OP11] = self.handle_op11  # JNE
-        self.branchtable[OP12] = self.handle_op12  # JEQ
+
         self.SP = 7
 
     def load(self):
@@ -291,4 +283,3 @@ thing = CPU()
 
 thing.run()
 # thing.load()
-
