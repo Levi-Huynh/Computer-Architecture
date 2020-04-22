@@ -39,7 +39,7 @@ class CPU:
         filename = sys.argv
         print(f"start load fileaname is {filename}")
         if len(filename) != 2:
-            print("usage: cpu.py filename")
+            print("usage: ls8.py filename")
             sys.exit(1)
 
         if len(filename) == 2:
@@ -203,7 +203,6 @@ class CPU:
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
-        #print(f"op: {op}, type bin: {type(op)}")
         num_operannds = op >> 6
         if op == 130:  # LOAD
             print("store!")
@@ -248,7 +247,7 @@ class CPU:
         #pc = 0
         running = True
         print("start running")
-        self.load()
+        # self.load()
         while running:
 
             # read the memory address that's stored in register PC == memory data
@@ -272,14 +271,12 @@ class CPU:
 
         return self.memory[address]
 
-    def ram_write(self, value_write_to_memory, addressIn_memoryTowrite):
-        self.memory[addressIn_memoryTowrite] = value_write_to_memory
-        return self.memory[addressIn_memoryTowrite]
+    def ram_write(self, value, address):
+        self.memory[address] = value
+        return self.memory[address]
 
 
-# filename = sys.argv[1]
-thing = CPU()
+#ls8 = CPU()
 
 
-thing.run()
-# thing.load()
+# ls8.run()
